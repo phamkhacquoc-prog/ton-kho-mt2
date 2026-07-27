@@ -150,6 +150,8 @@ document.querySelectorAll(".nav-btn").forEach((btn) => {
     if (btn.dataset.view === "inventory") renderInventory();
     if (btn.dataset.view === "history") renderHistorySelect();
     if (btn.dataset.view === "settings") renderSettings();
+    // Mở tab nào cũng tranh thủ đồng bộ ngầm để lấy số liệu mới nhất từ người khác
+    if (["dashboard", "inventory", "history"].includes(btn.dataset.view)) maybeAutoSync();
   });
 });
 
@@ -317,14 +319,6 @@ document.getElementById("btnConfirmImport").addEventListener("click", async () =
 
 /* ---------- Manual entry ---------- */
 document.getElementById("mNgay").value = todayISO();
-["mDau", "mNhap", "mXuat"].forEach((id) => {
-  document.getElementById(id).addEventListener("input", () => {
-    const dau = num(document.getElementById("mDau").value);
-    const nhap = num(document.getElementById("mNhap").value);
-    const xuat = num(document.getElementById("mXuat").value);
-    document.getElementById("mCuoi").value = dau + nhap - xuat;
-  });
-});
 
 document.getElementById("btnSaveManual").addEventListener("click", async () => {
   const date = document.getElementById("mNgay").value || todayISO();
@@ -338,9 +332,9 @@ document.getElementById("btnSaveManual").addEventListener("click", async () => {
     ten_hang: document.getElementById("mTen").value.trim(),
     dvt: document.getElementById("mDvt").value.trim(),
     nhom: document.getElementById("mNhom").value.trim(),
-    dau_ky: num(document.getElementById("mDau").value),
-    nhap_kho: num(document.getElementById("mNhap").value),
-    xuat_kho: num(document.getElementById("mXuat").value),
+    dau_ky: 0,
+    nhap_kho: 0,
+    xuat_kho: 0,
     cuoi_ky: num(document.getElementById("mCuoi").value),
     updatedBy: userName,
     updatedAt: new Date().toISOString(),
@@ -350,7 +344,7 @@ document.getElementById("btnSaveManual").addEventListener("click", async () => {
   await putRecord(rec);
   showToast("Đã lưu dòng tồn kho");
   ["mKho","mMa","mTen","mDvt","mNhom"].forEach(id => document.getElementById(id).value = "");
-  ["mDau","mNhap","mXuat","mCuoi"].forEach(id => document.getElementById(id).value = 0);
+  document.getElementById("mCuoi").value = 0;
   await refreshAllDateSelectors();
   await maybeAutoSync();
 });
@@ -447,12 +441,8 @@ async function renderDashboard() {
 
   const totalSKU = recs.length;
   const totalCuoi = recs.reduce((s, r) => s + num(r.cuoi_ky), 0);
-  const totalNhap = recs.reduce((s, r) => s + num(r.nhap_kho), 0);
-  const totalXuat = recs.reduce((s, r) => s + num(r.xuat_kho), 0);
   document.getElementById("statSKU").textContent = fmtNum(totalSKU);
   document.getElementById("statCuoiKy").textContent = fmtNum(totalCuoi);
-  document.getElementById("statNhap").textContent = fmtNum(totalNhap);
-  document.getElementById("statXuat").textContent = fmtNum(totalXuat);
 
   const threshold = num(await getSetting("threshold", 20));
   const low = recs.filter(r => num(r.cuoi_ky) <= threshold).sort((a, b) => num(a.cuoi_ky) - num(b.cuoi_ky));
@@ -520,9 +510,6 @@ async function renderInventory() {
         <td>${r.ma_hang}</td>
         <td>${r.ten_hang || ""}</td>
         <td>${r.dvt || ""}</td>
-        <td class="num-cell">${fmtNum(r.dau_ky)}</td>
-        <td class="num-cell">${fmtNum(r.nhap_kho)}</td>
-        <td class="num-cell">${fmtNum(r.xuat_kho)}</td>
         <td class="num-cell ${num(r.cuoi_ky) <= threshold ? 'low-stock' : ''}">${fmtNum(r.cuoi_ky)}</td>
       </tr>`).join("");
   }
@@ -569,9 +556,6 @@ async function renderHistoryFor(maHang) {
   tbody.innerHTML = recs.slice().reverse().map(r => `
     <tr>
       <td>${fmtDateVN(r.date)}</td>
-      <td class="num-cell">${fmtNum(r.dau_ky)}</td>
-      <td class="num-cell">${fmtNum(r.nhap_kho)}</td>
-      <td class="num-cell">${fmtNum(r.xuat_kho)}</td>
       <td class="num-cell">${fmtNum(r.cuoi_ky)}</td>
     </tr>`).join("");
 
@@ -754,6 +738,11 @@ function updateOnlineStatus() {
 window.addEventListener("online", () => { updateOnlineStatus(); maybeAutoSync(); });
 window.addEventListener("offline", updateOnlineStatus);
 
+// Đồng bộ ngay khi người dùng quay lại app (mở lại tab, mở lại từ nền)
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") maybeAutoSync();
+});
+
 /* ---------- PWA install prompt ---------- */
 let deferredPrompt = null;
 window.addEventListener("beforeinstallprompt", (e) => {
@@ -785,5 +774,6 @@ if ("serviceWorker" in navigator) {
   await refreshAllDateSelectors();
   renderSettings();
   renderHistorySelect();
-  setInterval(() => { if (navigator.onLine) maybeAutoSync(); }, 5 * 60 * 1000);
+  // Tự động đồng bộ định kỳ mỗi 60 giây khi app đang mở và có mạng
+  setInterval(() => { if (navigator.onLine) maybeAutoSync(); }, 60 * 1000);
 })();
