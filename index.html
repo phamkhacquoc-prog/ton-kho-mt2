@@ -6,7 +6,7 @@
 <title>Tồn Kho MT2</title>
 <meta name="theme-color" content="#0f766e" />
 <link rel="manifest" href="manifest.json" />
-<href="icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -17,7 +17,7 @@
 <header class="topbar">
   <div>
     <h1>Tồn Kho Miền Trung 2</h1>
-    <div class="sub" id="headerSub">Nhựa Tiến Đức</div>
+    <div class="sub" id="headerSub">Theo dõi tồn kho hằng ngày</div>
   </div>
   <div class="row">
     <span class="sync-dot offline" id="syncDot"></span>
@@ -49,9 +49,7 @@
 
     <div class="grid-2" id="dashStats">
       <div class="stat"><div class="num" id="statSKU">0</div><div class="label">Tổng số mã hàng</div></div>
-      <div class="stat"><div class="num" id="statCuoiKy">0</div><div class="label">Tổng tồn cuối</div></div>
-      <div class="stat"><div class="num" id="statNhap">0</div><div class="label">Tổng nhập trong kỳ</div></div>
-      <div class="stat"><div class="num" id="statXuat">0</div><div class="label">Tổng xuất trong kỳ</div></div>
+      <div class="stat"><div class="num" id="statCuoiKy">0</div><div class="label">Tổng tồn cuối kỳ</div></div>
     </div>
 
     <div class="card">
@@ -85,7 +83,7 @@
           <thead>
             <tr>
               <th>Mã hàng</th><th>Tên hàng</th><th>ĐVT</th>
-              <th class="num-cell">Đầu kỳ</th><th class="num-cell">Nhập</th><th class="num-cell">Xuất</th><th class="num-cell">Cuối kỳ</th>
+              <th class="num-cell">Cuối kỳ</th>
             </tr>
           </thead>
           <tbody id="invTableBody"></tbody>
@@ -129,12 +127,7 @@
       <input type="text" id="mTen" />
       <label>Nhóm VTHH</label>
       <input type="text" id="mNhom" />
-      <div class="grid-3">
-        <div><label>Đầu kỳ</label><input type="number" id="mDau" value="0" /></div>
-        <div><label>Nhập kho</label><input type="number" id="mNhap" value="0" /></div>
-        <div><label>Xuất kho</label><input type="number" id="mXuat" value="0" /></div>
-      </div>
-      <label>Cuối kỳ (tự tính, có thể sửa)</label>
+      <label>Số lượng tồn cuối kỳ</label>
       <input type="number" id="mCuoi" value="0" />
       <button class="block" id="btnSaveManual">Lưu dòng tồn kho</button>
     </div>
@@ -160,7 +153,7 @@
     <div class="card">
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Ngày</th><th class="num-cell">Đầu kỳ</th><th class="num-cell">Nhập</th><th class="num-cell">Xuất</th><th class="num-cell">Cuối kỳ</th></tr></thead>
+          <thead><tr><th>Ngày</th><th class="num-cell">Cuối kỳ</th></tr></thead>
           <tbody id="histTableBody"></tbody>
         </table>
       </div>

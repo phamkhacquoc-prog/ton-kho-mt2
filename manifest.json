@@ -1,7 +1,7 @@
 {
   "name": "Tồn Kho Miền Trung 2",
   "short_name": "Tồn Kho MT2",
-  "description": "Ứng dụng theo dõi tồn kho hằng ngày - Nhựa Tiến Đức",
+  "description": "Ứng dụng theo dõi tồn kho hằng ngày",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -9,9 +9,9 @@
   "theme_color": "#0f766e",
   "orientation": "portrait-primary",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
