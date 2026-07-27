@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<title>Tồn Kho MT2</title>
+<meta name="theme-color" content="#0f766e" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div>
+    <h1>Tồn Kho Miền Trung 2</h1>
+    <div class="sub" id="headerSub">Nhựa Tiến Đức</div>
+  </div>
+  <div class="row">
+    <span class="sync-dot offline" id="syncDot"></span>
+    <span id="syncLabel" style="font-size:11px;">Offline</span>
+  </div>
+</header>
+
+<main>
+
+  <div id="installBanner" class="install-banner" style="display:none;">
+    <span>Cài app này lên màn hình chính để dùng như app thật</span>
+    <button id="btnInstall">Cài đặt</button>
+  </div>
+
+  <!-- ============ TAB: TỔNG QUAN ============ -->
+  <section class="view active" id="view-dashboard">
+    <div class="card">
+      <div class="row between wrap">
+        <div style="flex:1; min-width:140px;">
+          <label>Ngày xem</label>
+          <select id="dashDate"></select>
+        </div>
+        <div style="flex:1; min-width:140px;">
+          <label>Kho</label>
+          <select id="dashKho"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2" id="dashStats">
+      <div class="stat"><div class="num" id="statSKU">0</div><div class="label">Tổng số mã hàng</div></div>
+      <div class="stat"><div class="num" id="statCuoiKy">0</div><div class="label">Tổng tồn cuối</div></div>
+      <div class="stat"><div class="num" id="statNhap">0</div><div class="label">Tổng nhập trong kỳ</div></div>
+      <div class="stat"><div class="num" id="statXuat">0</div><div class="label">Tổng xuất trong kỳ</div></div>
+    </div>
+
+    <div class="card">
+      <h3 style="display:flex; justify-content:space-between; align-items:center;">
+        <span>⚠️ Cảnh báo tồn thấp <span id="lowStockCount" class="badge danger">0</span></span>
+      </h3>
+      <div id="lowStockList"><div class="empty-state">Chưa có dữ liệu</div></div>
+    </div>
+
+    <div class="card">
+      <h3>So với lần cập nhật trước</h3>
+      <div id="compareBox"><div class="empty-state">Chưa đủ dữ liệu để so sánh</div></div>
+    </div>
+  </section>
+
+  <!-- ============ TAB: TỒN KHO ============ -->
+  <section class="view" id="view-inventory">
+    <div class="card">
+      <div class="row wrap">
+        <input type="text" id="invSearch" placeholder="Tìm mã hàng / tên hàng..." style="flex:2; min-width:150px;" />
+        <select id="invGroup" style="flex:1; min-width:120px;"><option value="">Tất cả nhóm</option></select>
+      </div>
+      <div class="row wrap" style="margin-top:8px;">
+        <select id="invKho" style="flex:1;"><option value="">Tất cả kho</option></select>
+        <select id="invDate" style="flex:1;"></select>
+      </div>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Mã hàng</th><th>Tên hàng</th><th>ĐVT</th>
+              <th class="num-cell">Đầu kỳ</th><th class="num-cell">Nhập</th><th class="num-cell">Xuất</th><th class="num-cell">Cuối kỳ</th>
+            </tr>
+          </thead>
+          <tbody id="invTableBody"></tbody>
+        </table>
+      </div>
+      <div id="invEmpty" class="empty-state" style="display:none;">Không có dữ liệu tồn kho. Hãy nhập liệu ở tab "Nhập liệu".</div>
+    </div>
+  </section>
+
+  <!-- ============ TAB: NHẬP LIỆU ============ -->
+  <section class="view" id="view-input">
+    <div class="card">
+      <div class="pill-toggle">
+        <button id="tabExcelBtn" class="active">Nhập từ Excel</button>
+        <button id="tabManualBtn">Nhập tay</button>
+      </div>
+    </div>
+
+    <div class="card" id="panelExcel">
+      <h3>Nhập file Excel tồn kho hằng ngày</h3>
+      <p class="hint">Dùng đúng mẫu báo cáo "Tổng hợp tồn kho" xuất từ hệ thống (cột: Tên kho, Mã hàng, Tên hàng, ĐVT, Đầu kỳ, Nhập kho, Xuất kho, Cuối kỳ, Nhóm VTHH).</p>
+      <label>Ngày áp dụng cho dữ liệu này</label>
+      <input type="date" id="importDate" />
+      <label>Chọn file Excel (.xlsx)</label>
+      <input type="file" id="importFile" accept=".xlsx,.xls" />
+      <div id="importPreview"></div>
+      <button class="block" id="btnConfirmImport" disabled>Lưu dữ liệu đã nhập</button>
+    </div>
+
+    <div class="card" id="panelManual" style="display:none;">
+      <h3>Nhập / sửa 1 dòng tồn kho</h3>
+      <label>Ngày</label>
+      <input type="date" id="mNgay" />
+      <label>Kho</label>
+      <input type="text" id="mKho" placeholder="VD: Kho Thành phẩm nhà máy Quảng Nam" />
+      <div class="grid-2">
+        <div><label>Mã hàng</label><input type="text" id="mMa" /></div>
+        <div><label>ĐVT</label><input type="text" id="mDvt" placeholder="Thùng / Bao..." /></div>
+      </div>
+      <label>Tên hàng</label>
+      <input type="text" id="mTen" />
+      <label>Nhóm VTHH</label>
+      <input type="text" id="mNhom" />
+      <div class="grid-3">
+        <div><label>Đầu kỳ</label><input type="number" id="mDau" value="0" /></div>
+        <div><label>Nhập kho</label><input type="number" id="mNhap" value="0" /></div>
+        <div><label>Xuất kho</label><input type="number" id="mXuat" value="0" /></div>
+      </div>
+      <label>Cuối kỳ (tự tính, có thể sửa)</label>
+      <input type="number" id="mCuoi" value="0" />
+      <button class="block" id="btnSaveManual">Lưu dòng tồn kho</button>
+    </div>
+
+    <div class="card">
+      <h3>Xuất báo cáo Excel</h3>
+      <label>Chọn ngày xuất</label>
+      <select id="exportDate"></select>
+      <button class="block secondary" id="btnExport">Xuất file Excel</button>
+    </div>
+  </section>
+
+  <!-- ============ TAB: LỊCH SỬ ============ -->
+  <section class="view" id="view-history">
+    <div class="card">
+      <label>Chọn mã hàng để xem xu hướng tồn kho</label>
+      <select id="histSelect"></select>
+    </div>
+    <div class="card">
+      <canvas id="histChart" height="180"></canvas>
+      <div id="histChartFallback" class="hint"></div>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Ngày</th><th class="num-cell">Đầu kỳ</th><th class="num-cell">Nhập</th><th class="num-cell">Xuất</th><th class="num-cell">Cuối kỳ</th></tr></thead>
+          <tbody id="histTableBody"></tbody>
+        </table>
+      </div>
+      <div id="histEmpty" class="empty-state">Chọn một mã hàng ở trên</div>
+    </div>
+  </section>
+
+  <!-- ============ TAB: CÀI ĐẶT ============ -->
+  <section class="view" id="view-settings">
+    <div class="card">
+      <h3>Thông tin người dùng</h3>
+      <label>Tên người cập nhật</label>
+      <input type="text" id="setUserName" placeholder="VD: Quốc - GĐKD MT2" />
+      <button class="block" id="btnSaveUser">Lưu</button>
+    </div>
+
+    <div class="card">
+      <h3>Cảnh báo tồn kho thấp</h3>
+      <label>Ngưỡng cảnh báo (tồn cuối &le; ngưỡng sẽ cảnh báo)</label>
+      <input type="number" id="setThreshold" value="20" />
+      <button class="block" id="btnSaveThreshold">Lưu ngưỡng</button>
+    </div>
+
+    <div class="card">
+      <h3>Đồng bộ Google Sheet (nhiều người cùng nhập)</h3>
+      <p class="hint">Dán URL Web App của Google Apps Script đã deploy (xem hướng dẫn bên dưới) để nhiều Sale / GĐKD cùng nhập liệu và đồng bộ chung.</p>
+      <label>Apps Script Web App URL</label>
+      <input type="text" id="setSheetUrl" placeholder="https://script.google.com/macros/s/..../exec" />
+      <div class="row" style="margin-top:8px;">
+        <button id="btnSaveSheetUrl" class="secondary" style="flex:1;">Lưu URL</button>
+        <button id="btnSyncNow" style="flex:1;">Đồng bộ ngay</button>
+      </div>
+      <p class="hint" id="lastSyncLabel">Chưa đồng bộ lần nào</p>
+      <details style="margin-top:10px;">
+        <summary style="font-size:13px; font-weight:600; cursor:pointer;">Xem hướng dẫn & code Apps Script</summary>
+        <p class="hint" style="margin-top:8px;">
+          1. Tạo 1 Google Sheet mới, đặt tên bất kỳ.<br/>
+          2. Vào menu <b>Tiện ích mở rộng → Apps Script</b>.<br/>
+          3. Xoá code mẫu, dán đoạn code bên dưới vào.<br/>
+          4. Bấm <b>Triển khai → Triển khai mới → Loại: Ứng dụng web</b>.<br/>
+          5. Mục "Ai có quyền truy cập": chọn <b>Bất kỳ ai (Anyone)</b>.<br/>
+          6. Bấm Triển khai, copy URL dạng <code class="inline">.../exec</code>, dán vào ô URL ở trên.
+        </p>
+        <textarea class="code-box" id="gsCodeBox" readonly></textarea>
+        <button class="secondary small" id="btnCopyGsCode" style="margin-top:6px;">Copy code</button>
+      </details>
+    </div>
+
+    <div class="card">
+      <h3>Dữ liệu</h3>
+      <div class="row">
+        <button class="secondary" id="btnExportAll" style="flex:1;">Xuất toàn bộ (Excel)</button>
+        <button class="danger" id="btnResetAll" style="flex:1;">Xoá toàn bộ dữ liệu</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Xuất file APK cài trên Android</h3>
+      <p class="hint">
+        Sau khi app này được publish lên một địa chỉ web (HTTPS), bạn có thể tạo file APK thật bằng
+        <b>PWABuilder.com</b> (miễn phí, không cần biết code):<br/>
+        1. Vào <code class="inline">pwabuilder.com</code><br/>
+        2. Dán URL app vào ô tìm kiếm, bấm Start<br/>
+        3. Chọn tab <b>Android</b> → Generate Package<br/>
+        4. Tải file <code class="inline">.apk</code> về, gửi qua điện thoại và cài (bật "Cho phép cài từ nguồn không xác định" trong Cài đặt Android).
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<nav class="bottom">
+  <button class="nav-btn active" data-view="dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+    Tổng quan
+  </button>
+  <button class="nav-btn" data-view="inventory">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+    Tồn kho
+  </button>
+  <button class="nav-btn" data-view="input">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    Nhập liệu
+  </button>
+  <button class="nav-btn" data-view="history">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 9l-5 5-4-4-4 4"/></svg>
+    Lịch sử
+  </button>
+  <button class="nav-btn" data-view="settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09c0 .68.39 1.3 1 1.51.62.25 1.33.12 1.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06c-.45.49-.58 1.2-.33 1.82.21.61.83 1 1.51 1H21a2 2 0 010 4h-.09c-.68 0-1.3.39-1.51 1z"/></svg>
+    Cài đặt
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
