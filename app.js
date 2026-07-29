@@ -593,9 +593,16 @@ async function renderSettings() {
   document.getElementById("setThreshold").value = await getSetting("threshold", 20);
   document.getElementById("setSheetUrl").value = (await getSetting("sheetUrl", "")) || "";
   const lastSync = await getSetting("lastSync", null);
-  document.getElementById("lastSyncLabel").textContent = lastSync
+  const lastErr = await getSetting("lastSyncError", "");
+  const label = document.getElementById("lastSyncLabel");
+  const baseText = lastSync
     ? `Lần đồng bộ gần nhất: ${new Date(lastSync).toLocaleString("vi-VN")}`
     : "Chưa đồng bộ lần nào";
+  if (lastErr) {
+    label.innerHTML = `${baseText}<br/><span style="color:var(--danger); font-weight:600;">Lỗi lần gần nhất: ${lastErr}</span>`;
+  } else {
+    label.textContent = baseText;
+  }
 }
 
 document.getElementById("btnSaveUser").addEventListener("click", async () => {
@@ -685,11 +692,20 @@ async function syncNow(silent) {
     const all = await getAllRecords();
     const unsynced = all.filter(r => !r.synced);
     if (unsynced.length > 0) {
-      await fetch(url, {
+      const postRes = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({ records: unsynced }),
       });
+      const postText = await postRes.text();
+      let postJson = null;
+      try { postJson = JSON.parse(postText); } catch (e) { /* server didn't return JSON */ }
+      if (!postRes.ok || !postJson || postJson.ok !== true) {
+        throw new Error(
+          "Server không xác nhận đã ghi dữ liệu (kiểm tra lại quyền 'Ai có quyền truy cập' = Anyone khi Deploy). Phản hồi nhận được: " +
+          postText.slice(0, 300)
+        );
+      }
       const marked = unsynced.map(r => ({ ...r, synced: true }));
       await putRecords(marked);
     }
@@ -708,11 +724,14 @@ async function syncNow(silent) {
       if (remoteRecs.length > 0) await putRecords(remoteRecs);
     }
     await setSetting("lastSync", new Date().toISOString());
+    await setSetting("lastSyncError", "");
     if (!silent) showToast("Đồng bộ thành công");
     await refreshAllDateSelectors();
     renderSettings();
   } catch (err) {
+    await setSetting("lastSyncError", err.message);
     if (!silent) showToast("Lỗi đồng bộ: " + err.message);
+    renderSettings();
   }
 }
 
