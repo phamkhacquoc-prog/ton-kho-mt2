@@ -718,6 +718,17 @@ async function syncNow(silent) {
 
 document.getElementById("btnSyncNow").addEventListener("click", () => syncNow(false));
 
+document.getElementById("btnForceSync").addEventListener("click", async () => {
+  const url = await getSetting("sheetUrl", "");
+  if (!url) { showToast("Chưa cấu hình URL Google Sheet"); return; }
+  const all = await getAllRecords();
+  if (all.length === 0) { showToast("Chưa có dữ liệu trên máy để đẩy lên"); return; }
+  const reset = all.map((r) => ({ ...r, synced: false }));
+  await putRecords(reset);
+  showToast(`Đang đẩy lại ${reset.length} dòng lên Sheet...`);
+  await syncNow(false);
+});
+
 async function maybeAutoSync() {
   const url = await getSetting("sheetUrl", "");
   if (url && navigator.onLine) syncNow(true);
